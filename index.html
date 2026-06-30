@@ -247,6 +247,7 @@
     <div class="tabs">
       <div class="tab active" onclick="switchTeacherTab('myClass',this)">우리 반</div>
       <div class="tab" id="gradeTab" style="display:none" onclick="switchTeacherTab('grade',this)">학년 전체</div>
+      <div class="tab" id="allGradeTab" style="display:none" onclick="switchTeacherTab('allGrade',this)">전교 전체</div>
     </div>
     <div id="teacherMyClass">
       <div class="card">
@@ -277,6 +278,20 @@
       <div class="card">
         <h3 id="gradeListTitle">학년 전체 기록</h3>
         <div id="gradeLogList"><div class="spinner">불러오는 중...</div></div>
+      </div>
+    </div>
+
+    <!-- 총괄관리자: 전교 전체 -->
+    <div id="teacherAllGrade" style="display:none">
+      <div class="tabs">
+        <div class="tab active" onclick="switchAllGradeTab(null,this)">전체</div>
+        <div class="tab" onclick="switchAllGradeTab(1,this)">1학년</div>
+        <div class="tab" onclick="switchAllGradeTab(2,this)">2학년</div>
+        <div class="tab" onclick="switchAllGradeTab(3,this)">3학년</div>
+      </div>
+      <div class="card">
+        <h3 id="allGradeListTitle">전교 전체 기록</h3>
+        <div id="allGradeLogList"><div class="spinner">불러오는 중...</div></div>
       </div>
     </div>
   </div>
@@ -347,7 +362,7 @@
     <div id="adminTeachers" style="display:none">
       <div class="card">
         <h3>👩‍🏫 담임 계정 목록</h3>
-        <p style="font-size:13px;color:#6b7280;margin-bottom:12px">★ 버튼으로 학년 관리자 권한을 부여/해제합니다.</p>
+        <p style="font-size:13px;color:#6b7280;margin-bottom:12px">★ 학년관리자 / 👑 총괄관리자 권한을 부여/해제합니다.</p>
         <div class="tabs">
           <div class="tab active" onclick="switchTeacherListGrade(1,this)">1학년</div>
           <div class="tab" onclick="switchTeacherListGrade(2,this)">2학년</div>
@@ -417,19 +432,28 @@ let periodStart=null, periodEnd=null;
 let allStudents=[], classStudents=[], currentTeacherListGrade=1;
 const STAR_LABELS=['','😴 부족','🙂 보통','😊 양호','😎 충실','🔥 최고'];
 
-// ─── JSONP 통신 ───
-function gas(params) {
+// ─── JSONP 통신 (타임아웃 25초 + 실패시 1회 자동 재시도) ───
+function gasOnce(params, timeoutMs) {
   return new Promise((resolve, reject) => {
-    const cb = 'cb_' + Date.now();
+    const cb = 'cb_' + Date.now() + '_' + Math.floor(Math.random()*10000);
     const qs = Object.entries(params).map(([k,v])=>`${encodeURIComponent(k)}=${encodeURIComponent(v??'')}`).join('&');
     const script = document.createElement('script');
-    const timeout = setTimeout(()=>{ cleanup(); reject(new Error('timeout')); }, 15000);
+    const timeout = setTimeout(()=>{ cleanup(); reject(new Error('timeout')); }, timeoutMs);
     window[cb] = data => { cleanup(); resolve(data); };
     function cleanup(){ clearTimeout(timeout); delete window[cb]; script.parentNode?.removeChild(script); }
     script.onerror = ()=>{ cleanup(); reject(new Error('network error')); };
     script.src = `${GAS_URL}?callback=${cb}&${qs}`;
     document.head.appendChild(script);
   });
+}
+
+async function gas(params) {
+  try {
+    return await gasOnce(params, 25000);
+  } catch(e) {
+    // 1회 자동 재시도
+    return await gasOnce(params, 25000);
+  }
 }
 
 // ─── 로그인 ───
@@ -563,12 +587,19 @@ async function savePassword(){ const oldPw=document.getElementById('oldPw').valu
 // ─── 담임 화면 ───
 function showTeacherScreen(){
   showScreen('teacherScreen');
-  document.getElementById('teacherTitle').textContent=`${currentUser.fullCls} 담임`;
+  document.getElementById('teacherTitle').textContent=currentUser.superAdmin?'총괄관리자':`${currentUser.fullCls} 담임`;
   const bw=document.getElementById('teacherBadgeWrap');
-  bw.innerHTML=`<span class="badge badge-teacher">담임</span>`;
+  bw.innerHTML=currentUser.superAdmin?`<span class="badge" style="background:#fef2f2;color:#dc2626">총괄관리자</span>`:`<span class="badge badge-teacher">담임</span>`;
   if(currentUser.gradeAdmin) bw.innerHTML+=` <span class="badge badge-grade">학년관리자 (${currentUser.gradeStr})</span>`;
   document.getElementById('gradeTab').style.display=currentUser.gradeAdmin?'block':'none';
-  loadClassData();
+  document.getElementById('allGradeTab').style.display=currentUser.superAdmin?'block':'none';
+  // 총괄관리자는 '우리 반' 탭이 의미 없으므로 전교 전체로 바로 이동
+  if(currentUser.superAdmin){
+    document.querySelectorAll('#teacherScreen .tabs .tab')[0].style.display='none';
+    switchTeacherTab('allGrade', document.getElementById('allGradeTab'));
+  } else {
+    loadClassData();
+  }
 }
 
 async function loadClassData(){
@@ -584,7 +615,44 @@ function showStudentDetail(id){ const s=classStudents.find(s=>s.id===id); if(!s)
 
 function closeDetail(){ document.getElementById('stuDetailCard').style.display='none'; }
 
-function switchTeacherTab(tab,el){ document.querySelectorAll('#teacherScreen .tabs .tab').forEach(t=>t.classList.remove('active')); el.classList.add('active'); document.getElementById('teacherMyClass').style.display=tab==='myClass'?'block':'none'; document.getElementById('teacherGrade').style.display=tab==='grade'?'block':'none'; if(tab==='grade') loadGradeLog(null); }
+function switchTeacherTab(tab,el){
+  document.querySelectorAll('#teacherScreen .tabs .tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('teacherMyClass').style.display=tab==='myClass'?'block':'none';
+  document.getElementById('teacherGrade').style.display=tab==='grade'?'block':'none';
+  document.getElementById('teacherAllGrade').style.display=tab==='allGrade'?'block':'none';
+  if(tab==='grade') loadGradeLog(null);
+  if(tab==='allGrade') loadAllGradeLog(null);
+}
+
+let currentAllGradeFilter=null;
+async function loadAllGradeLog(grade){
+  currentAllGradeFilter=grade;
+  document.getElementById('allGradeListTitle').textContent=grade?`${grade}학년 전체 기록`:'전교 전체 기록';
+  document.getElementById('allGradeLogList').innerHTML='<div class="spinner">불러오는 중...</div>';
+  try{
+    const res=await gas({action:'allGradeLog',grade:grade||''});
+    if(!res.records.length){document.getElementById('allGradeLogList').innerHTML='<div style="color:#9ca3af;font-size:13px;text-align:center;padding:20px">기록 없음</div>';return;}
+    document.getElementById('allGradeLogList').innerHTML=res.records.map(r=>`
+      <div class="stu-log-item">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><span class="stu-log-name">${r.name}</span> <span class="tag" style="font-size:11px">${r.fullCls}</span></div>
+          <span class="stu-log-time">${r.minutes}분</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div class="stu-log-note" style="margin-top:6px">${r.note}</div>
+          <span>${'⭐'.repeat(r.star||0)}</span>
+        </div>
+        <div class="stu-log-meta">${r.date}</div>
+      </div>`).join('');
+  }catch(e){ document.getElementById('allGradeLogList').innerHTML='<div class="err">불러오기 실패: '+e.message+'</div>'; }
+}
+
+function switchAllGradeTab(grade,el){
+  el.closest('.tabs').querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  loadAllGradeLog(grade);
+}
 
 async function loadGradeLog(cls){ document.getElementById('gradeListTitle').textContent=cls?`${currentUser.gradeStr} ${cls} 기록`:`${currentUser.gradeStr} 전체 기록`; document.getElementById('gradeLogList').innerHTML='<div class="spinner">불러오는 중...</div>'; try{ const res=await gas({action:'gradeLog',grade:currentUser.grade,cls:cls||''}); if(!res.records.length){document.getElementById('gradeLogList').innerHTML='<div style="color:#9ca3af;font-size:13px;text-align:center;padding:20px">기록 없음</div>';return;} document.getElementById('gradeLogList').innerHTML=res.records.map(r=>`<div class="stu-log-item"><div style="display:flex;justify-content:space-between;align-items:center"><div><span class="stu-log-name">${r.name}</span> <span class="tag" style="font-size:11px">${r.fullCls}</span></div><span class="stu-log-time">${r.minutes}분</span></div><div style="display:flex;justify-content:space-between;align-items:center"><div class="stu-log-note" style="margin-top:6px">${r.note}</div><span>${'⭐'.repeat(r.star||0)}</span></div><div class="stu-log-meta">${r.date}</div></div>`).join(''); }catch(e){ document.getElementById('gradeLogList').innerHTML='<div class="err">불러오기 실패: '+e.message+'</div>'; } }
 
@@ -627,9 +695,23 @@ async function renderTeacherList(g){
   document.getElementById('teacherListWrap').innerHTML='<div class="spinner">불러오는 중...</div>';
   try{
     const res=await gas({action:'teacherList',grade:g});
-    document.getElementById('teacherListWrap').innerHTML=res.teachers.length===0?'<div style="color:#9ca3af;font-size:13px;text-align:center;padding:20px">담임 없음</div>':res.teachers.map(t=>`<div class="rank-item"><div class="rank-info"><div class="rank-name">${t.name} <span style="font-size:11px;color:#9ca3af">${t.id}</span></div><div class="rank-class">${t.fullCls}</div></div><div style="display:flex;align-items:center;gap:8px">${t.gradeAdmin?'<span class="badge badge-grade">학년관리자</span>':''}<button class="btn ${t.gradeAdmin?'btn-danger':'btn-primary'} btn-sm" onclick="toggleGradeAdmin('${t.id}',${!t.gradeAdmin})">${t.gradeAdmin?'권한해제':'★ 권한부여'}</button></div></div>`).join('');
+    document.getElementById('teacherListWrap').innerHTML=res.teachers.length===0?'<div style="color:#9ca3af;font-size:13px;text-align:center;padding:20px">담임 없음</div>':res.teachers.map(t=>`
+      <div class="rank-item">
+        <div class="rank-info">
+          <div class="rank-name">${t.name} <span style="font-size:11px;color:#9ca3af">${t.id}</span></div>
+          <div class="rank-class">${t.fullCls}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          ${t.gradeAdmin?'<span class="badge badge-grade">학년관리자</span>':''}
+          ${t.superAdmin?'<span class="badge" style="background:#fef2f2;color:#dc2626">총괄관리자</span>':''}
+          <button class="btn ${t.gradeAdmin?'btn-danger':'btn-primary'} btn-sm" onclick="toggleGradeAdmin('${t.id}',${!t.gradeAdmin})">${t.gradeAdmin?'★해제':'★학년'}</button>
+          <button class="btn ${t.superAdmin?'btn-danger':'btn-gray'} btn-sm" onclick="toggleSuperAdmin('${t.id}',${!t.superAdmin})">${t.superAdmin?'👑해제':'👑총괄'}</button>
+        </div>
+      </div>`).join('');
   }catch(e){ document.getElementById('teacherListWrap').innerHTML='<div class="err">불러오기 실패: '+e.message+'</div>'; }
 }
+
+async function toggleSuperAdmin(teacherId,grant){ try{ await gas({action:'toggleSuperAdmin',teacherId,grant:grant?'1':'0'}); renderTeacherList(currentTeacherListGrade); }catch(e){ alert('오류: '+e.message); } }
 
 async function toggleGradeAdmin(teacherId,grant){ try{ await gas({action:'toggleGradeAdmin',teacherId,grant:grant?'1':'0'}); renderTeacherList(currentTeacherListGrade); }catch(e){ alert('오류: '+e.message); } }
 
