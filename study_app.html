@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>King of Study Hard</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:#f0f4ff;min-height:100vh}
+  .screen{display:none;padding:20px;max-width:480px;margin:0 auto}
+  .screen.active{display:block}
+  .card{background:#fff;border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+  .btn{display:block;width:100%;padding:14px;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;transition:.15s}
+  .btn-primary{background:#4f6ef7;color:#fff}.btn-primary:hover{background:#3a5ae0}
+  .btn-danger{background:#ff4d4d;color:#fff}
+  .btn-success{background:#22c55e;color:#fff}
+  .btn-gray{background:#e5e7eb;color:#374151}
+  .btn-sm{padding:6px 12px;font-size:12px;width:auto;display:inline-block;border-radius:8px}
+  input,select,textarea{width:100%;padding:11px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;margin-bottom:10px;outline:none;transition:border .15s}
+  input:focus,select:focus,textarea:focus{border-color:#4f6ef7}
+  h2{font-size:20px;margin-bottom:4px}
+  h3{font-size:16px;margin-bottom:12px;color:#374151}
+  .sub{font-size:13px;color:#6b7280;margin-bottom:16px}
+  .tag{display:inline-block;background:#eff2ff;color:#4f6ef7;border-radius:6px;padding:3px 9px;font-size:12px;font-weight:600}
+  .err{color:#ef4444;font-size:13px;margin-bottom:8px}
+  .ok{color:#22c55e;font-size:13px;margin-bottom:8px}
+  #loginScreen{padding-top:48px}
+  .logo{text-align:center;margin-bottom:36px}
+  .logo-icon{font-size:52px}
+  .logo h1{font-size:26px;margin-top:12px;color:#1e293b;letter-spacing:-.5px;font-weight:800}
+  .logo h1 .k{color:#ef4444;font-size:36px;font-weight:900}
+  .logo h1 .s{color:#4f6ef7;font-size:36px;font-weight:900}
+  .logo h1 .h{color:#f59e0b;font-size:36px;font-weight:900}
+  .logo p{font-size:13px;color:#6b7280;margin-top:4px}
+  .timer-box{text-align:center;padding:28px 20px}
+  .timer-display{font-size:56px;font-weight:800;color:#1e293b;letter-spacing:2px;font-variant-numeric:tabular-nums}
+  .timer-display.running{color:#4f6ef7}
+  .timer-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
+  .timer-btns .btn{padding:12px;font-size:14px}
+  .star-row{display:flex;gap:8px;margin-bottom:12px}
+  .star{font-size:32px;cursor:pointer;transition:transform .1s;user-select:none;opacity:.3}
+  .star.on{opacity:1}
+  .star:hover{transform:scale(1.2)}
+  .mode-toggle{display:flex;background:#f3f4f6;border-radius:10px;padding:3px;margin-bottom:0}
+  .mode-btn{flex:1;padding:8px;text-align:center;font-size:13px;font-weight:600;border-radius:8px;cursor:pointer;color:#6b7280;border:none;background:none;transition:.15s}
+  .mode-btn.active{background:#fff;color:#4f6ef7;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+  .time-input-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .log-item{border-bottom:1px solid #f3f4f6;padding:12px 0}
+  .log-item:last-child{border:none}
+  .log-subject{font-weight:700;font-size:14px;color:#1e293b}
+  .log-meta{font-size:12px;color:#9ca3af;margin-top:3px}
+  .log-note{font-size:13px;color:#374151;margin-top:4px;line-height:1.5}
+  .rank-item{display:flex;align-items:center;padding:10px 0;border-bottom:1px solid #f3f4f6}
+  .rank-item:last-child{border:none}
+  .rank-num{width:32px;font-size:18px;font-weight:800;color:#94a3b8}
+  .rank-num.gold{color:#f59e0b}.rank-num.silver{color:#9ca3af}.rank-num.bronze{color:#b45309}
+  .rank-info{flex:1}
+  .rank-name{font-size:14px;font-weight:700}
+  .rank-class{font-size:12px;color:#6b7280}
+  .rank-time{font-size:14px;font-weight:700;color:#4f6ef7}
+  .tabs{display:flex;background:#f3f4f6;border-radius:12px;padding:4px;margin-bottom:16px}
+  .tab{flex:1;padding:8px;text-align:center;font-size:13px;font-weight:600;border-radius:9px;cursor:pointer;color:#6b7280;transition:.15s}
+  .tab.active{background:#fff;color:#4f6ef7;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+  .nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e5e7eb;display:flex;z-index:100}
+  .nav-item{flex:1;padding:10px 4px 8px;text-align:center;cursor:pointer}
+  .nav-item .icon{font-size:22px}
+  .nav-item .label{font-size:10px;color:#6b7280;margin-top:2px}
+  .nav-item.active .label{color:#4f6ef7}
+  .content-wrap{padding-bottom:72px}
+  .admin-stat{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+  .stat-card{background:#eff2ff;border-radius:12px;padding:16px;text-align:center}
+  .stat-num{font-size:26px;font-weight:800;color:#4f6ef7}
+  .stat-label{font-size:12px;color:#6b7280;margin-top:2px}
+  .class-rank-bar{display:flex;align-items:center;margin-bottom:10px}
+  .bar-wrap{flex:1;background:#f3f4f6;border-radius:6px;height:20px;overflow:hidden;margin:0 8px}
+  .bar-fill{height:100%;background:linear-gradient(90deg,#4f6ef7,#818cf8);border-radius:6px}
+  .stu-log-item{background:#f8faff;border-radius:10px;padding:12px;margin-bottom:8px}
+  .stu-log-name{font-weight:700;font-size:14px;color:#1e293b}
+  .stu-log-time{font-size:12px;color:#4f6ef7;font-weight:600}
+  .stu-log-note{font-size:13px;color:#374151;margin-top:4px;line-height:1.5}
+  .stu-log-meta{font-size:11px;color:#9ca3af;margin-top:3px}
+  .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700}
+  .badge-grade{background:#f0fdf4;color:#16a34a}
+  .badge-teacher{background:#fefce8;color:#ca8a04}
+  .stu-row{display:flex;align-items:center;padding:10px 0;border-bottom:1px solid #f3f4f6;cursor:pointer}
+  .stu-row:last-child{border:none}
+  .stu-row-info{flex:1}
+  .stu-row-name{font-size:14px;font-weight:700}
+  .stu-row-id{font-size:12px;color:#9ca3af}
+  .stu-row-min{font-size:13px;font-weight:700;color:#4f6ef7}
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;align-items:center;justify-content:center}
+  .modal-overlay.show{display:flex}
+  .modal{background:#fff;border-radius:20px;padding:24px;width:calc(100% - 40px);max-width:400px}
+  .modal h3{margin-bottom:16px}
+  .spinner{text-align:center;padding:24px;color:#9ca3af;font-size:13px}
+</style>
+</head>
+<body>
+
+<!-- 로그인 -->
+<div id="loginScreen" class="screen active">
+  <div class="logo">
+    <div class="logo-icon">👑</div>
+    <h1><span class="k">K</span>ing of <span class="s">S</span>tudy <span class="h">H</span>ard</h1>
+    <p>인천하늘고등학교</p>
+  </div>
+  <div class="card">
+    <h3>로그인</h3>
+    <input type="text" id="loginId" placeholder="아이디"/>
+    <input type="password" id="loginPw" placeholder="비밀번호"/>
+    <div id="loginErr" class="err" style="display:none"></div>
+    <button class="btn btn-primary" onclick="doLogin()">로그인</button>
+    <div style="margin-top:12px;text-align:center">
+      <a href="#" onclick="showAdminLogin()" style="font-size:13px;color:#6b7280;text-decoration:none">🔑 관리자 모드</a>
+    </div>
+  </div>
+</div>
+
+<!-- 학생 화면 -->
+<div id="studentScreen" class="screen">
+  <div class="content-wrap">
+    <div id="tabTimer" style="display:none">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <div>
+            <span id="stuName" style="font-weight:700;font-size:16px"></span>
+            <span id="stuClass" class="tag" style="margin-left:6px"></span>
+          </div>
+          <a href="#" onclick="doLogout()" style="font-size:12px;color:#9ca3af;text-decoration:none">로그아웃</a>
+        </div>
+        <div class="sub" id="stuTotalTime">오늘 누적: 0분 | 전체: 0분</div>
+      </div>
+      <div class="card" style="padding:14px 20px">
+        <div class="mode-toggle">
+          <button class="mode-btn active" id="modeTimerBtn" onclick="switchMode('timer')">⏱ 타이머</button>
+          <button class="mode-btn" id="modeManualBtn" onclick="switchMode('manual')">✏️ 직접 기록</button>
+        </div>
+      </div>
+      <!-- 타이머 모드 -->
+      <div id="timerMode">
+        <div class="card timer-box">
+          <div class="timer-display" id="timerDisplay">00:00:00</div>
+          <div style="font-size:13px;color:#6b7280;margin-top:8px" id="timerStatus">타이머 중지</div>
+          <div class="timer-btns">
+            <button class="btn btn-success" id="btnStart" onclick="startTimer()">▶ 시작</button>
+            <button class="btn btn-danger" id="btnStop" onclick="stopTimer()" disabled>■ 정지 및 저장</button>
+          </div>
+        </div>
+        <div class="card" id="saveForm" style="display:none">
+          <h3>📝 공부 내용 및 자기 평가</h3>
+          <textarea id="studyNote" rows="4" placeholder="오늘 공부한 내용을 자유롭게 적어주세요"></textarea>
+          <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:8px">충실도</div>
+          <div class="star-row" id="starRow">
+            <span class="star" onclick="setStar(1)">⭐</span>
+            <span class="star" onclick="setStar(2)">⭐</span>
+            <span class="star" onclick="setStar(3)">⭐</span>
+            <span class="star" onclick="setStar(4)">⭐</span>
+            <span class="star" onclick="setStar(5)">⭐</span>
+          </div>
+          <div style="font-size:12px;color:#9ca3af;margin-bottom:12px" id="starLabel">별점을 선택하세요</div>
+          <button class="btn btn-primary" onclick="saveRecord('timer')">저장하기</button>
+          <button class="btn btn-gray" style="margin-top:8px" onclick="cancelSave()">취소</button>
+          <div id="saveMsg" class="ok" style="display:none"></div>
+        </div>
+      </div>
+      <!-- 직접 기록 모드 -->
+      <div id="manualMode" style="display:none">
+        <div class="card">
+          <h3>✏️ 직접 기록</h3>
+          <div style="font-size:13px;color:#6b7280;margin-bottom:6px">날짜</div>
+          <input type="date" id="manualDate"/>
+          <div style="font-size:13px;color:#6b7280;margin-bottom:6px">공부 시간</div>
+          <div class="time-input-row">
+            <input type="number" id="manualHour" placeholder="시간" min="0" max="23" style="text-align:center"/>
+            <input type="number" id="manualMin" placeholder="분" min="0" max="59" style="text-align:center"/>
+          </div>
+          <div style="font-size:13px;color:#6b7280;margin-bottom:6px">공부 내용 및 자기 평가</div>
+          <textarea id="manualNote" rows="4" placeholder="공부한 내용을 자유롭게 적어주세요"></textarea>
+          <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:8px">충실도</div>
+          <div class="star-row" id="manualStarRow">
+            <span class="star" onclick="setManualStar(1)">⭐</span>
+            <span class="star" onclick="setManualStar(2)">⭐</span>
+            <span class="star" onclick="setManualStar(3)">⭐</span>
+            <span class="star" onclick="setManualStar(4)">⭐</span>
+            <span class="star" onclick="setManualStar(5)">⭐</span>
+          </div>
+          <div style="font-size:12px;color:#9ca3af;margin-bottom:12px" id="manualStarLabel">별점을 선택하세요</div>
+          <div id="manualSaveMsg" class="ok" style="display:none"></div>
+          <button class="btn btn-primary" onclick="saveRecord('manual')">저장하기</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="tabLog" style="display:none">
+      <div class="card">
+        <h3>📖 내 공부 기록</h3>
+        <div id="myLogList"></div>
+      </div>
+    </div>
+
+    <div id="tabRank" style="display:none">
+      <div class="card">
+        <div class="tabs">
+          <div class="tab active" onclick="switchRankTab('all',this)">전체</div>
+          <div class="tab" onclick="switchRankTab('class',this)">반별</div>
+        </div>
+        <div id="rankAll"></div>
+        <div id="rankClass" style="display:none"></div>
+      </div>
+    </div>
+
+    <div id="tabSetting" style="display:none">
+      <div class="card">
+        <h3>🏷 닉네임 설정</h3>
+        <p style="font-size:13px;color:#6b7280;margin-bottom:12px">랭킹에 실명 대신 표시될 닉네임을 설정하세요.</p>
+        <input type="text" id="nicknameInput" placeholder="닉네임 (비워두면 실명 표시)" maxlength="10"/>
+        <div id="nicknameMsg" style="display:none;font-size:13px;margin-bottom:8px"></div>
+        <button class="btn btn-primary" onclick="saveNickname()">닉네임 저장</button>
+      </div>
+      <div class="card">
+        <h3>🔒 비밀번호 변경</h3>
+        <input type="password" id="oldPw" placeholder="현재 비밀번호"/>
+        <input type="password" id="newPw" placeholder="새 비밀번호"/>
+        <input type="password" id="newPw2" placeholder="새 비밀번호 확인"/>
+        <div id="pwMsg" style="display:none;font-size:13px;margin-bottom:8px"></div>
+        <button class="btn btn-primary" onclick="savePassword()">비밀번호 변경</button>
+      </div>
+    </div>
+  </div>
+  <div class="nav">
+    <div class="nav-item active" id="nav0" onclick="switchTab(0)"><div class="icon">⏱</div><div class="label">타이머</div></div>
+    <div class="nav-item" id="nav1" onclick="switchTab(1)"><div class="icon">📓</div><div class="label">기록</div></div>
+    <div class="nav-item" id="nav2" onclick="switchTab(2)"><div class="icon">🏆</div><div class="label">랭킹</div></div>
+    <div class="nav-item" id="nav3" onclick="switchTab(3)"><div class="icon">⚙️</div><div class="label">설정</div></div>
+  </div>
+</div>
+
+<!-- 담임 화면 -->
+<div id="teacherScreen" class="screen">
+  <div class="content-wrap">
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <h2 id="teacherTitle">담임 대시보드</h2>
+        <div id="teacherBadgeWrap" style="margin-top:4px"></div>
+      </div>
+      <a href="#" onclick="doLogout()" style="font-size:12px;color:#9ca3af;text-decoration:none">로그아웃</a>
+    </div>
+    <div class="tabs">
+      <div class="tab active" onclick="switchTeacherTab('myClass',this)">우리 반</div>
+      <div class="tab" id="gradeTab" style="display:none" onclick="switchTeacherTab('grade',this)">학년 전체</div>
+    </div>
+    <div id="teacherMyClass">
+      <div class="card">
+        <h3 id="myClassTitle">우리 반 학생</h3>
+        <input type="text" id="searchMyClass" placeholder="이름 검색" oninput="filterMyClass()" style="margin-bottom:12px"/>
+        <div id="myClassList"><div class="spinner">불러오는 중...</div></div>
+      </div>
+      <div class="card" id="stuDetailCard" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <h3 id="stuDetailName" style="margin:0"></h3>
+          <button class="btn btn-gray btn-sm" onclick="closeDetail()">✕ 닫기</button>
+        </div>
+        <div id="stuDetailLog"></div>
+      </div>
+    </div>
+    <div id="teacherGrade" style="display:none">
+      <div class="tabs" style="flex-wrap:wrap;gap:4px">
+        <div class="tab active" style="flex:none;padding:6px 10px" onclick="switchGradeClassTab(null,this)">전체</div>
+        <div class="tab" style="flex:none;padding:6px 10px" onclick="switchGradeClassTab('1반',this)">1반</div>
+        <div class="tab" style="flex:none;padding:6px 10px" onclick="switchGradeClassTab('2반',this)">2반</div>
+        <div class="tab" style="flex:none;padding:6px 10px" onclick="switchGradeClassTab('3반',this)">3반</div>
+        <div class="tab" style="flex:none;padding:6px 10px" onclick="switchGradeClassTab('4반',this)">4반</div>
+        <div class="tab" style="flex:none;padding:6px 10px" onclick="switchGradeClassTab('5반',this)">5반</div>
+        <div class="tab" style="flex:none;padding:6px 10px" onclick="switchGradeClassTab('6반',this)">6반</div>
+        <div class="tab" style="flex:none;padding:6px 10px" onclick="switchGradeClassTab('7반',this)">7반</div>
+        <div class="tab" style="flex:none;padding:6px 10px" onclick="switchGradeClassTab('8반',this)">8반</div>
+      </div>
+      <div class="card">
+        <h3 id="gradeListTitle">학년 전체 기록</h3>
+        <div id="gradeLogList"><div class="spinner">불러오는 중...</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 관리자 화면 -->
+<div id="adminScreen" class="screen">
+  <div class="content-wrap">
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <h2><span style="color:#ef4444">K</span>oSH 관리자</h2>
+        <div class="sub" style="margin:0">인천하늘고등학교</div>
+      </div>
+      <a href="#" onclick="doLogout()" style="font-size:12px;color:#9ca3af;text-decoration:none">로그아웃</a>
+    </div>
+    <div class="tabs">
+      <div class="tab active" onclick="switchAdminTab('overview',this)">현황</div>
+      <div class="tab" onclick="switchAdminTab('teachers',this)">담임관리</div>
+      <div class="tab" onclick="switchAdminTab('students',this)">학생목록</div>
+      <div class="tab" onclick="switchAdminTab('register',this)">학생등록</div>
+    </div>
+
+    <div id="adminOverview">
+      <div class="card" style="padding:16px 20px">
+        <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:10px">📅 집계 기간 설정</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+          <div>
+            <div style="font-size:11px;color:#9ca3af;margin-bottom:4px">시작일</div>
+            <input type="date" id="periodStart" style="margin:0;font-size:13px;padding:8px 10px"/>
+          </div>
+          <div>
+            <div style="font-size:11px;color:#9ca3af;margin-bottom:4px">종료일</div>
+            <input type="date" id="periodEnd" style="margin:0;font-size:13px;padding:8px 10px"/>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary" style="padding:8px;font-size:13px" onclick="applyPeriod()">적용</button>
+          <button class="btn btn-gray" style="padding:8px;font-size:13px" onclick="resetPeriod()">전체 기간</button>
+        </div>
+        <div id="periodLabel" style="font-size:12px;color:#6b7280;margin-top:8px">📌 전체 기간 집계 중</div>
+      </div>
+      <div class="admin-stat">
+        <div class="stat-card"><div class="stat-num" id="statTotal">-</div><div class="stat-label">전체 공부시간(분)</div></div>
+        <div class="stat-card"><div class="stat-num" id="statToday">-</div><div class="stat-label">오늘 기록 수</div></div>
+      </div>
+      <div class="card">
+        <h3>🏫 반별 공부시간</h3>
+        <div style="font-size:11px;color:#9ca3af;margin-bottom:10px">막대: 누적 &nbsp;|&nbsp; 숫자: 누적 / 1인평균</div>
+        <div id="classRankBars"></div>
+      </div>
+      <div class="card">
+        <h3>🏆 전체 학생 TOP 20</h3>
+        <div id="adminTop20"></div>
+      </div>
+      <div class="card">
+        <h3>📊 학년별 TOP 10</h3>
+        <div class="tabs">
+          <div class="tab active" onclick="switchGradeTab('1학년',this)">1학년</div>
+          <div class="tab" onclick="switchGradeTab('2학년',this)">2학년</div>
+          <div class="tab" onclick="switchGradeTab('3학년',this)">3학년</div>
+        </div>
+        <div id="gradeTop1학년"></div>
+        <div id="gradeTop2학년" style="display:none"></div>
+        <div id="gradeTop3학년" style="display:none"></div>
+      </div>
+    </div>
+
+    <div id="adminTeachers" style="display:none">
+      <div class="card">
+        <h3>👩‍🏫 담임 계정 목록</h3>
+        <p style="font-size:13px;color:#6b7280;margin-bottom:12px">★ 버튼으로 학년 관리자 권한을 부여/해제합니다.</p>
+        <div class="tabs">
+          <div class="tab active" onclick="switchTeacherListGrade(1,this)">1학년</div>
+          <div class="tab" onclick="switchTeacherListGrade(2,this)">2학년</div>
+          <div class="tab" onclick="switchTeacherListGrade(3,this)">3학년</div>
+        </div>
+        <div id="teacherListWrap"><div class="spinner">불러오는 중...</div></div>
+      </div>
+    </div>
+
+    <div id="adminStudents" style="display:none">
+      <div class="card">
+        <input type="text" id="searchStu" placeholder="이름 또는 반 검색" oninput="filterStudents()" style="margin-bottom:12px"/>
+        <div id="studentListWrap"><div class="spinner">불러오는 중...</div></div>
+      </div>
+    </div>
+
+    <div id="adminRegister" style="display:none">
+      <div class="card">
+        <h3>개별 학생 등록</h3>
+        <select id="regGrade"><option value="">학년 선택</option><option>1학년</option><option>2학년</option><option>3학년</option></select>
+        <select id="regClass"><option value="">반 선택</option>
+          <option>1반</option><option>2반</option><option>3반</option><option>4반</option>
+          <option>5반</option><option>6반</option><option>7반</option><option>8반</option>
+        </select>
+        <input type="text" id="regNum" placeholder="번호 (예: 15)"/>
+        <input type="text" id="regName" placeholder="이름"/>
+        <input type="text" id="regId" placeholder="아이디 (예: 1-1-15)"/>
+        <input type="password" id="regPw" placeholder="비밀번호"/>
+        <div id="regMsg" style="display:none;font-size:13px;margin-bottom:8px"></div>
+        <button class="btn btn-primary" onclick="registerStudent()">등록하기</button>
+      </div>
+      <div class="card">
+        <h3>시트 구조 안내</h3>
+        <div style="font-size:13px;color:#6b7280;line-height:1.9">
+          <b>Students 시트</b><br>
+          A:학년 | B:반 | C:번호 | D:이름 | E:아이디 | F:비밀번호 | G:총공부분(0) | H:닉네임<br><br>
+          <b>Teachers 시트</b><br>
+          A:학년 | B:반 | C:담임명 | D:아이디 | E:비밀번호 | F:학년관리자(0/1)<br><br>
+          <b>Records 시트</b><br>
+          A:날짜 | B:아이디 | C:이름 | D:학년반 | E:학년 | F:반 | G:내용 | H:분 | I:별점
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 관리자 로그인 모달 -->
+<div class="modal-overlay" id="adminModal">
+  <div class="modal">
+    <h3>🔑 관리자 로그인</h3>
+    <input type="password" id="adminPw" placeholder="관리자 비밀번호"/>
+    <div id="adminErr" class="err" style="display:none">비밀번호가 틀렸습니다.</div>
+    <button class="btn btn-primary" onclick="doAdminLogin()">확인</button>
+    <button class="btn btn-gray" style="margin-top:8px" onclick="closeAdminModal()">취소</button>
+  </div>
+</div>
+
+<script>
+// ★ 여기만 수정하세요
+const GAS_URL = 'YOUR_GAS_URL_HERE';
+
+// ─── 상태 ───
+let currentUser = null;
+let timerInterval=null, timerSeconds=0, timerRunning=false, savedSeconds=0;
+let starVal=0, manualStarVal=0;
+let periodStart=null, periodEnd=null;
+let allStudents=[], classStudents=[], currentTeacherListGrade=1;
+const STAR_LABELS=['','😴 부족','🙂 보통','😊 양호','😎 충실','🔥 최고'];
+
+// ─── JSONP 통신 ───
+function gas(params) {
+  return new Promise((resolve, reject) => {
+    const cb = 'cb_' + Date.now();
+    const qs = Object.entries(params).map(([k,v])=>`${encodeURIComponent(k)}=${encodeURIComponent(v??'')}`).join('&');
+    const script = document.createElement('script');
+    const timeout = setTimeout(()=>{ cleanup(); reject(new Error('timeout')); }, 15000);
+    window[cb] = data => { cleanup(); resolve(data); };
+    function cleanup(){ clearTimeout(timeout); delete window[cb]; script.parentNode?.removeChild(script); }
+    script.onerror = ()=>{ cleanup(); reject(new Error('network error')); };
+    script.src = `${GAS_URL}?callback=${cb}&${qs}`;
+    document.head.appendChild(script);
+  });
+}
+
+// ─── 로그인 ───
+async function doLogin() {
+  const id=document.getElementById('loginId').value.trim();
+  const pw=document.getElementById('loginPw').value.trim();
+  if(!id||!pw) return showErr('loginErr','아이디와 비밀번호를 입력하세요.');
+  showErr('loginErr','로그인 중...',true,'#6b7280');
+  try {
+    const res=await gas({action:'login',id,pw});
+    if(res.ok){ currentUser=res.user; res.user.type==='teacher'?showTeacherScreen():showStudentScreen(); }
+    else showErr('loginErr',res.msg||'로그인 실패');
+  } catch(e){ showErr('loginErr','서버 연결 실패: '+e.message); }
+}
+
+function showAdminLogin(){ document.getElementById('adminPw').value=''; document.getElementById('adminErr').style.display='none'; document.getElementById('adminModal').classList.add('show'); }
+function closeAdminModal(){ document.getElementById('adminModal').classList.remove('show'); }
+
+async function doAdminLogin(){
+  const pw=document.getElementById('adminPw').value;
+  if(!pw) return;
+  try{
+    const res=await gas({action:'adminLogin',pw});
+    if(res.ok){ closeAdminModal(); currentUser={type:'admin'}; showScreen('adminScreen'); initPeriod(); loadAdminData(); }
+    else document.getElementById('adminErr').style.display='block';
+  }catch(e){ document.getElementById('adminErr').textContent='서버 오류: '+e.message; document.getElementById('adminErr').style.display='block'; }
+}
+
+function doLogout(){ if(timerRunning){clearInterval(timerInterval);timerRunning=false;} currentUser=null; showScreen('loginScreen'); }
+
+// ─── 학생 화면 ───
+function showStudentScreen(){ showScreen('studentScreen'); document.getElementById('stuName').textContent=currentUser.name; document.getElementById('stuClass').textContent=currentUser.fullCls; switchTab(0); loadMyStats(); }
+
+function switchTab(n){
+  ['tabTimer','tabLog','tabRank','tabSetting'].forEach((t,i)=>document.getElementById(t).style.display=i===n?'block':'none');
+  for(let i=0;i<4;i++) document.getElementById('nav'+i).classList.toggle('active',i===n);
+  if(n===1) loadMyLog();
+  if(n===2) loadRanking();
+}
+
+async function loadMyStats(){
+  try{ const res=await gas({action:'myStats',id:currentUser.id}); document.getElementById('stuTotalTime').textContent=`오늘 누적: ${res.todayMin}분 | 전체: ${res.totalMin}분`; }catch(e){}
+}
+
+// ─── 타이머 ───
+function startTimer(){ timerRunning=true; timerSeconds=0; document.getElementById('timerDisplay').classList.add('running'); document.getElementById('timerStatus').textContent='공부 중 ⏱'; document.getElementById('btnStart').disabled=true; document.getElementById('btnStop').disabled=false; document.getElementById('saveForm').style.display='none'; timerInterval=setInterval(()=>{ timerSeconds++; document.getElementById('timerDisplay').textContent=formatTime(timerSeconds); },1000); }
+
+function stopTimer(){ clearInterval(timerInterval); timerRunning=false; savedSeconds=timerSeconds; document.getElementById('timerDisplay').classList.remove('running'); document.getElementById('timerStatus').textContent=`기록: ${formatTime(savedSeconds)} — 내용을 입력하세요`; document.getElementById('btnStart').disabled=false; document.getElementById('btnStop').disabled=true; document.getElementById('saveForm').style.display='block'; document.getElementById('saveMsg').style.display='none'; document.getElementById('studyNote').value=''; setStar(0); }
+
+function cancelSave(){ document.getElementById('saveForm').style.display='none'; document.getElementById('timerDisplay').textContent='00:00:00'; document.getElementById('timerStatus').textContent='타이머 중지'; timerSeconds=0; setStar(0); }
+
+function setStar(n){ starVal=n; document.querySelectorAll('#starRow .star').forEach((s,i)=>s.classList.toggle('on',i<n)); document.getElementById('starLabel').textContent=n?STAR_LABELS[n]:'별점을 선택하세요'; }
+function setManualStar(n){ manualStarVal=n; document.querySelectorAll('#manualStarRow .star').forEach((s,i)=>s.classList.toggle('on',i<n)); document.getElementById('manualStarLabel').textContent=n?STAR_LABELS[n]:'별점을 선택하세요'; }
+
+function switchMode(mode){
+  document.getElementById('timerMode').style.display=mode==='timer'?'block':'none';
+  document.getElementById('manualMode').style.display=mode==='manual'?'block':'none';
+  document.getElementById('modeTimerBtn').classList.toggle('active',mode==='timer');
+  document.getElementById('modeManualBtn').classList.toggle('active',mode==='manual');
+  if(mode==='manual'){ document.getElementById('manualDate').value=today(); document.getElementById('manualHour').value=''; document.getElementById('manualMin').value=''; document.getElementById('manualNote').value=''; setManualStar(0); document.getElementById('manualSaveMsg').style.display='none'; }
+}
+
+async function saveRecord(mode){
+  let note,minutes,date,star;
+  if(mode==='timer'){
+    note=document.getElementById('studyNote').value.trim(); minutes=Math.round(savedSeconds/60); date=today(); star=starVal;
+    if(!note) return alert('공부 내용을 입력하세요.');
+    if(minutes<1) return alert('최소 1분 이상 공부해야 기록됩니다.');
+    if(!star) return alert('충실도 별점을 선택하세요.');
+  } else {
+    note=document.getElementById('manualNote').value.trim();
+    const h=Number(document.getElementById('manualHour').value)||0;
+    const m=Number(document.getElementById('manualMin').value)||0;
+    minutes=h*60+m; date=document.getElementById('manualDate').value; star=manualStarVal;
+    if(!note) return alert('공부 내용을 입력하세요.');
+    if(minutes<1) return alert('공부 시간을 입력하세요 (최소 1분).');
+    if(!date) return alert('날짜를 선택하세요.');
+    if(!star) return alert('충실도 별점을 선택하세요.');
+  }
+  try{
+    await gas({action:'saveRecord',id:currentUser.id,name:currentUser.name,fullCls:currentUser.fullCls,grade:currentUser.grade,cls:currentUser.cls,note,minutes,date,star});
+    if(mode==='timer'){
+      const msg=document.getElementById('saveMsg'); msg.style.display='block'; msg.textContent=`✅ ${minutes}분 저장 완료!`;
+      setTimeout(()=>{ cancelSave(); loadMyStats(); },1500);
+    } else {
+      const msg=document.getElementById('manualSaveMsg'); msg.style.display='block'; msg.textContent=`✅ ${minutes}분 저장 완료!`;
+      setTimeout(()=>{ document.getElementById('manualNote').value=''; document.getElementById('manualHour').value=''; document.getElementById('manualMin').value=''; setManualStar(0); msg.style.display='none'; loadMyStats(); },1500);
+    }
+  }catch(e){ alert('저장 실패: '+e.message); }
+}
+
+// ─── 내 기록 ───
+async function loadMyLog(){
+  document.getElementById('myLogList').innerHTML='<div class="spinner">불러오는 중...</div>';
+  try{
+    const res=await gas({action:'myLog',id:currentUser.id});
+    if(!res.logs.length){ document.getElementById('myLogList').innerHTML='<div style="color:#9ca3af;font-size:13px;text-align:center;padding:20px">아직 기록이 없습니다.</div>'; return; }
+    document.getElementById('myLogList').innerHTML=res.logs.map(l=>`
+      <div class="log-item">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div class="log-subject">${l.minutes}분</div>
+          <div>${'⭐'.repeat(l.star||0)}</div>
+        </div>
+        <div class="log-note">${l.note}</div>
+        <div class="log-meta">${l.date}</div>
+      </div>`).join('');
+  }catch(e){ document.getElementById('myLogList').innerHTML='<div class="err">불러오기 실패: '+e.message+'</div>'; }
+}
+
+// ─── 랭킹 ───
+let rankData=null;
+async function loadRanking(){
+  document.getElementById('rankAll').innerHTML='<div class="spinner">불러오는 중...</div>';
+  try{
+    rankData=await gas({action:'ranking'});
+    renderRankAll(); renderRankClass();
+  }catch(e){ document.getElementById('rankAll').innerHTML='<div class="err">불러오기 실패</div>'; }
+}
+
+function renderRankAll(){ document.getElementById('rankAll').innerHTML=rankData.students.slice(0,30).map((s,i)=>`<div class="rank-item"><div class="rank-num ${i===0?'gold':i===1?'silver':i===2?'bronze':''}">${i+1}</div><div class="rank-info"><div class="rank-name">${s.name}${s.id===currentUser?.id?' <span style="color:#f59e0b">★ 나</span>':''}</div><div class="rank-class">${s.fullCls}</div></div><div class="rank-time">${s.totalMin}분</div></div>`).join(''); }
+
+function renderRankClass(){ const mx=Math.max(...rankData.classes.map(c=>c.totalMin),1); document.getElementById('rankClass').innerHTML=rankData.classes.map((c,i)=>`<div class="class-rank-bar"><div style="width:76px;font-size:12px;font-weight:700">${c.class}</div><div class="bar-wrap"><div class="bar-fill" style="width:${Math.round(c.totalMin/mx*100)}%"></div></div><div style="font-size:11px;font-weight:700;color:#4f6ef7;width:90px;text-align:right">${c.totalMin}분<br><span style="color:#9ca3af;font-weight:400">평균 ${c.avgMin}분</span></div></div>`).join(''); }
+
+function switchRankTab(tab,el){ document.querySelectorAll('#tabRank .tab').forEach(t=>t.classList.remove('active')); el.classList.add('active'); document.getElementById('rankAll').style.display=tab==='all'?'block':'none'; document.getElementById('rankClass').style.display=tab==='class'?'block':'none'; }
+
+// ─── 설정 ───
+async function saveNickname(){ const nickname=document.getElementById('nicknameInput').value.trim(); const msg=document.getElementById('nicknameMsg'); try{ const res=await gas({action:'changeNickname',id:currentUser.id,nickname}); msg.style.display='block'; if(res.ok){msg.textContent='✅ 닉네임이 저장되었습니다!';msg.className='ok';}else{msg.textContent='❌ '+res.msg;msg.className='err';} }catch(e){msg.style.display='block';msg.textContent='오류: '+e.message;msg.className='err';} }
+
+async function savePassword(){ const oldPw=document.getElementById('oldPw').value,newPw=document.getElementById('newPw').value,newPw2=document.getElementById('newPw2').value; const msg=document.getElementById('pwMsg'); msg.style.display='block'; if(!oldPw||!newPw||!newPw2){msg.textContent='모든 항목을 입력하세요.';msg.className='err';return;} if(newPw!==newPw2){msg.textContent='새 비밀번호가 일치하지 않습니다.';msg.className='err';return;} if(newPw.length<4){msg.textContent='비밀번호는 4자 이상이어야 합니다.';msg.className='err';return;} try{ const res=await gas({action:'changePassword',id:currentUser.id,oldPw,newPw}); if(res.ok){msg.textContent='✅ 비밀번호가 변경되었습니다!';msg.className='ok';['oldPw','newPw','newPw2'].forEach(i=>document.getElementById(i).value='');}else{msg.textContent='❌ '+res.msg;msg.className='err';} }catch(e){msg.textContent='오류: '+e.message;msg.className='err';} }
+
+// ─── 담임 화면 ───
+function showTeacherScreen(){
+  showScreen('teacherScreen');
+  document.getElementById('teacherTitle').textContent=`${currentUser.fullCls} 담임`;
+  const bw=document.getElementById('teacherBadgeWrap');
+  bw.innerHTML=`<span class="badge badge-teacher">담임</span>`;
+  if(currentUser.gradeAdmin) bw.innerHTML+=` <span class="badge badge-grade">학년관리자 (${currentUser.gradeStr})</span>`;
+  document.getElementById('gradeTab').style.display=currentUser.gradeAdmin?'block':'none';
+  loadClassData();
+}
+
+async function loadClassData(){
+  document.getElementById('myClassTitle').textContent=`${currentUser.fullCls} 학생`;
+  document.getElementById('myClassList').innerHTML='<div class="spinner">불러오는 중...</div>';
+  try{ const res=await gas({action:'classLog',grade:currentUser.grade,cls:currentUser.cls}); classStudents=res.students; filterMyClass(); }
+  catch(e){ document.getElementById('myClassList').innerHTML='<div class="err">불러오기 실패: '+e.message+'</div>'; }
+}
+
+function filterMyClass(){ const q=document.getElementById('searchMyClass').value.toLowerCase(); const filtered=classStudents.filter(s=>s.name.includes(q)); document.getElementById('myClassList').innerHTML=filtered.length===0?'<div style="color:#9ca3af;font-size:13px;text-align:center;padding:20px">학생이 없습니다.</div>':filtered.map(s=>`<div class="stu-row" onclick="showStudentDetail('${s.id}')"><div class="stu-row-info"><div class="stu-row-name">${s.name}</div><div class="stu-row-id">${s.id} · 기록 ${s.logs.length}건</div></div><div class="stu-row-min">${s.totalMin}분</div></div>`).join(''); }
+
+function showStudentDetail(id){ const s=classStudents.find(s=>s.id===id); if(!s) return; document.getElementById('stuDetailName').textContent=`${s.name} — 총 ${s.totalMin}분`; document.getElementById('stuDetailLog').innerHTML=s.logs.length===0?'<div style="color:#9ca3af;font-size:13px;text-align:center;padding:16px">기록 없음</div>':s.logs.map(l=>`<div class="stu-log-item"><div style="display:flex;justify-content:space-between"><span class="stu-log-time">${l.minutes}분</span><span>${'⭐'.repeat(l.star||0)}</span></div><div class="stu-log-note">${l.note}</div><div class="stu-log-meta">${l.date}</div></div>`).join(''); document.getElementById('stuDetailCard').style.display='block'; document.getElementById('stuDetailCard').scrollIntoView({behavior:'smooth'}); }
+
+function closeDetail(){ document.getElementById('stuDetailCard').style.display='none'; }
+
+function switchTeacherTab(tab,el){ document.querySelectorAll('#teacherScreen .tabs .tab').forEach(t=>t.classList.remove('active')); el.classList.add('active'); document.getElementById('teacherMyClass').style.display=tab==='myClass'?'block':'none'; document.getElementById('teacherGrade').style.display=tab==='grade'?'block':'none'; if(tab==='grade') loadGradeLog(null); }
+
+async function loadGradeLog(cls){ document.getElementById('gradeListTitle').textContent=cls?`${currentUser.gradeStr} ${cls} 기록`:`${currentUser.gradeStr} 전체 기록`; document.getElementById('gradeLogList').innerHTML='<div class="spinner">불러오는 중...</div>'; try{ const res=await gas({action:'gradeLog',grade:currentUser.grade,cls:cls||''}); if(!res.records.length){document.getElementById('gradeLogList').innerHTML='<div style="color:#9ca3af;font-size:13px;text-align:center;padding:20px">기록 없음</div>';return;} document.getElementById('gradeLogList').innerHTML=res.records.map(r=>`<div class="stu-log-item"><div style="display:flex;justify-content:space-between;align-items:center"><div><span class="stu-log-name">${r.name}</span> <span class="tag" style="font-size:11px">${r.fullCls}</span></div><span class="stu-log-time">${r.minutes}분</span></div><div style="display:flex;justify-content:space-between;align-items:center"><div class="stu-log-note" style="margin-top:6px">${r.note}</div><span>${'⭐'.repeat(r.star||0)}</span></div><div class="stu-log-meta">${r.date}</div></div>`).join(''); }catch(e){ document.getElementById('gradeLogList').innerHTML='<div class="err">불러오기 실패: '+e.message+'</div>'; } }
+
+function switchGradeClassTab(cls,el){ el.closest('.tabs').querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); el.classList.add('active'); loadGradeLog(cls); }
+
+// ─── 관리자 화면 ───
+function initPeriod(){ periodStart=null; periodEnd=null; document.getElementById('periodStart').value=''; document.getElementById('periodEnd').value=''; document.getElementById('periodLabel').textContent='📌 전체 기간 집계 중'; }
+
+function applyPeriod(){ periodStart=document.getElementById('periodStart').value; periodEnd=document.getElementById('periodEnd').value; if(!periodStart||!periodEnd) return alert('시작일과 종료일을 모두 선택하세요.'); if(periodStart>periodEnd) return alert('시작일이 종료일보다 늦을 수 없습니다.'); document.getElementById('periodLabel').textContent=`📌 ${periodStart} ~ ${periodEnd} 기간 집계 중`; loadAdminData(); }
+
+function resetPeriod(){ initPeriod(); loadAdminData(); }
+
+async function loadAdminData(){
+  try{
+    const res=await gas({action:'adminData',periodStart:periodStart||'',periodEnd:periodEnd||''});
+    document.getElementById('statTotal').textContent=res.totalMin;
+    document.getElementById('statToday').textContent=res.todayCount;
+    const mx=Math.max(...res.classes.map(c=>c.totalMin),1);
+    document.getElementById('classRankBars').innerHTML=res.classes.map(c=>`<div class="class-rank-bar"><div style="width:76px;font-size:11px;font-weight:700">${c.class}</div><div class="bar-wrap"><div class="bar-fill" style="width:${Math.round(c.totalMin/mx*100)}%"></div></div><div style="font-size:11px;font-weight:700;color:#4f6ef7;width:90px;text-align:right;white-space:nowrap">${c.totalMin}분<br><span style="color:#9ca3af;font-weight:400">평균 ${c.avgMin}분</span></div></div>`).join('');
+    document.getElementById('adminTop20').innerHTML=res.students.slice(0,20).map((s,i)=>`<div class="rank-item"><div class="rank-num ${i===0?'gold':i===1?'silver':i===2?'bronze':''}">${i+1}</div><div class="rank-info"><div class="rank-name">${s.name}</div><div class="rank-class">${s.fullCls}</div></div><div class="rank-time">${s.totalMin}분</div></div>`).join('');
+    ['1학년','2학년','3학년'].forEach(g=>{ const list=(res.gradeMap[g]||[]).slice(0,10); document.getElementById('gradeTop'+g).innerHTML=list.length===0?'<div style="color:#9ca3af;font-size:13px;text-align:center;padding:16px">데이터 없음</div>':list.map((s,i)=>`<div class="rank-item"><div class="rank-num ${i===0?'gold':i===1?'silver':i===2?'bronze':''}">${i+1}</div><div class="rank-info"><div class="rank-name">${s.name}</div><div class="rank-class">${s.fullCls}</div></div><div class="rank-time">${s.totalMin}분</div></div>`).join(''); });
+    allStudents=res.allStudents||[];
+    renderStudentList(allStudents);
+    renderTeacherList(currentTeacherListGrade);
+  }catch(e){ alert('데이터 로드 실패: '+e.message); }
+}
+
+function switchAdminTab(tab,el){ document.querySelectorAll('#adminScreen > .content-wrap > .tabs .tab').forEach(t=>t.classList.remove('active')); el.classList.add('active'); ['adminOverview','adminTeachers','adminStudents','adminRegister'].forEach(id=>document.getElementById(id).style.display='none'); document.getElementById('admin'+tab.charAt(0).toUpperCase()+tab.slice(1)).style.display='block'; }
+
+function switchGradeTab(grade,el){ el.closest('.card').querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); el.classList.add('active'); ['1학년','2학년','3학년'].forEach(g=>document.getElementById('gradeTop'+g).style.display=g===grade?'block':'none'); }
+
+async function loadTeacherList(){
+  try{ const res=await gas({action:'teacherList'}); renderTeacherListFromData(res.teachers,currentTeacherListGrade); }
+  catch(e){ document.getElementById('teacherListWrap').innerHTML='<div class="err">불러오기 실패: '+e.message+'</div>'; }
+}
+
+function switchTeacherListGrade(g,el){ el.closest('.tabs').querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); el.classList.add('active'); currentTeacherListGrade=g; renderTeacherList(g); }
+
+async function renderTeacherList(g){
+  document.getElementById('teacherListWrap').innerHTML='<div class="spinner">불러오는 중...</div>';
+  try{
+    const res=await gas({action:'teacherList',grade:g});
+    document.getElementById('teacherListWrap').innerHTML=res.teachers.length===0?'<div style="color:#9ca3af;font-size:13px;text-align:center;padding:20px">담임 없음</div>':res.teachers.map(t=>`<div class="rank-item"><div class="rank-info"><div class="rank-name">${t.name} <span style="font-size:11px;color:#9ca3af">${t.id}</span></div><div class="rank-class">${t.fullCls}</div></div><div style="display:flex;align-items:center;gap:8px">${t.gradeAdmin?'<span class="badge badge-grade">학년관리자</span>':''}<button class="btn ${t.gradeAdmin?'btn-danger':'btn-primary'} btn-sm" onclick="toggleGradeAdmin('${t.id}',${!t.gradeAdmin})">${t.gradeAdmin?'권한해제':'★ 권한부여'}</button></div></div>`).join('');
+  }catch(e){ document.getElementById('teacherListWrap').innerHTML='<div class="err">불러오기 실패: '+e.message+'</div>'; }
+}
+
+async function toggleGradeAdmin(teacherId,grant){ try{ await gas({action:'toggleGradeAdmin',teacherId,grant:grant?'1':'0'}); renderTeacherList(currentTeacherListGrade); }catch(e){ alert('오류: '+e.message); } }
+
+function filterStudents(){ const q=document.getElementById('searchStu').value.toLowerCase(); renderStudentList(allStudents.filter(s=>s.name.includes(q)||s.fullCls.includes(q)||s.id.includes(q))); }
+
+function renderStudentList(list){ document.getElementById('studentListWrap').innerHTML=list.length===0?'<div style="color:#9ca3af;font-size:13px;text-align:center;padding:20px">검색 결과 없음</div>':list.map(s=>`<div class="rank-item"><div class="rank-info"><div class="rank-name">${s.name} <span style="font-size:11px;color:#9ca3af">${s.id}</span></div><div class="rank-class">${s.fullCls} · ${s.num}번</div></div><div class="rank-time">${s.totalMin||0}분</div></div>`).join(''); }
+
+async function registerStudent(){ const grade=document.getElementById('regGrade').value,cls=document.getElementById('regClass').value,num=document.getElementById('regNum').value.trim(),name=document.getElementById('regName').value.trim(),id=document.getElementById('regId').value.trim(),pw=document.getElementById('regPw').value.trim(); if(!grade||!cls||!num||!name||!id||!pw) return alert('모든 항목을 입력하세요.'); try{ const res=await gas({action:'registerStudent',grade,class:cls,num,name,id,pw}); const msg=document.getElementById('regMsg'); msg.style.display='block'; if(res.ok){msg.textContent='✅ 등록 완료!';msg.className='ok';['regGrade','regClass','regNum','regName','regId','regPw'].forEach(i=>document.getElementById(i).value='');}else{msg.textContent='❌ '+(res.msg||'등록 실패');msg.className='err';} }catch(e){ alert('오류: '+e.message); } }
+
+// ─── 유틸 ───
+function showScreen(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+function showErr(id,msg,show=true,color='#ef4444'){ const el=document.getElementById(id); el.textContent=msg; el.style.color=color; el.style.display='block'; }
+function formatTime(sec){ return [Math.floor(sec/3600),Math.floor((sec%3600)/60),sec%60].map(v=>String(v).padStart(2,'0')).join(':'); }
+function today(){ return new Date().toISOString().slice(0,10); }
+document.getElementById('loginPw').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+document.getElementById('adminPw').addEventListener('keydown',e=>{if(e.key==='Enter')doAdminLogin();});
+</script>
+</body>
+</html>
