@@ -147,6 +147,7 @@
         </div>
         <div class="card" id="saveForm" style="display:none">
           <h3>📝 공부 내용 및 자기 평가</h3>
+          <div id="timerTimeRange" style="font-size:13px;color:#4f6ef7;font-weight:700;margin-bottom:12px;background:#eff2ff;padding:8px 12px;border-radius:8px"></div>
           <textarea id="studyNote" rows="4" placeholder="오늘 공부한 내용을 자유롭게 적어주세요"></textarea>
           <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:8px">충실도</div>
           <div class="star-row" id="starRow">
@@ -169,10 +170,17 @@
           <div style="font-size:13px;color:#6b7280;margin-bottom:6px">날짜</div>
           <input type="date" id="manualDate"/>
           <div style="font-size:13px;color:#6b7280;margin-bottom:6px">공부 시간</div>
-          <div class="time-input-row">
-            <input type="number" id="manualHour" placeholder="시간" min="0" max="23" style="text-align:center"/>
-            <input type="number" id="manualMin" placeholder="분" min="0" max="59" style="text-align:center"/>
+          <div class="time-input-row" style="margin-bottom:4px">
+            <div>
+              <div style="font-size:11px;color:#9ca3af;margin-bottom:4px">시작 시각</div>
+              <input type="time" id="manualStartTime" oninput="calcManualMinutes()" style="text-align:center"/>
+            </div>
+            <div>
+              <div style="font-size:11px;color:#9ca3af;margin-bottom:4px">종료 시각</div>
+              <input type="time" id="manualEndTime" oninput="calcManualMinutes()" style="text-align:center"/>
+            </div>
           </div>
+          <div id="manualCalcResult" style="font-size:13px;color:#4f6ef7;font-weight:700;margin-bottom:10px;min-height:20px"></div>
           <div style="font-size:13px;color:#6b7280;margin-bottom:6px">공부 내용 및 자기 평가</div>
           <textarea id="manualNote" rows="4" placeholder="공부한 내용을 자유롭게 적어주세요"></textarea>
           <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:8px">충실도</div>
@@ -499,13 +507,57 @@ async function loadMyStats(){
 }
 
 // ─── 타이머 ───
-function startTimer(){ timerRunning=true; timerSeconds=0; document.getElementById('timerDisplay').classList.add('running'); document.getElementById('timerStatus').textContent='공부 중 ⏱'; document.getElementById('btnStart').disabled=true; document.getElementById('btnStop').disabled=false; document.getElementById('saveForm').style.display='none'; timerInterval=setInterval(()=>{ timerSeconds++; document.getElementById('timerDisplay').textContent=formatTime(timerSeconds); },1000); }
+let timerStartTime = null; // 시작 시각 저장
 
-function stopTimer(){ clearInterval(timerInterval); timerRunning=false; savedSeconds=timerSeconds; document.getElementById('timerDisplay').classList.remove('running'); document.getElementById('timerStatus').textContent=`기록: ${formatTime(savedSeconds)} — 내용을 입력하세요`; document.getElementById('btnStart').disabled=false; document.getElementById('btnStop').disabled=true; document.getElementById('saveForm').style.display='block'; document.getElementById('saveMsg').style.display='none'; document.getElementById('studyNote').value=''; setStar(0); }
+function startTimer(){
+  timerRunning=true; timerSeconds=0;
+  timerStartTime = new Date(); // 시작 시각 기록
+  document.getElementById('timerDisplay').classList.add('running');
+  document.getElementById('timerStatus').textContent='공부 중 ⏱ (시작: '+fmtHHMM(timerStartTime)+')';
+  document.getElementById('btnStart').disabled=true;
+  document.getElementById('btnStop').disabled=false;
+  document.getElementById('saveForm').style.display='none';
+  timerInterval=setInterval(()=>{ timerSeconds++; document.getElementById('timerDisplay').textContent=formatTime(timerSeconds); },1000);
+}
 
-function cancelSave(){ document.getElementById('saveForm').style.display='none'; document.getElementById('timerDisplay').textContent='00:00:00'; document.getElementById('timerStatus').textContent='타이머 중지'; timerSeconds=0; setStar(0); }
+function stopTimer(){
+  clearInterval(timerInterval); timerRunning=false; savedSeconds=timerSeconds;
+  const endTime = new Date();
+  document.getElementById('timerDisplay').classList.remove('running');
+  document.getElementById('timerStatus').textContent=`${fmtHHMM(timerStartTime)} ~ ${fmtHHMM(endTime)} (${formatTime(savedSeconds)})`;
+  document.getElementById('btnStart').disabled=false;
+  document.getElementById('btnStop').disabled=true;
+  document.getElementById('saveForm').style.display='block';
+  document.getElementById('saveMsg').style.display='none';
+  document.getElementById('studyNote').value='';
+  // 저장 폼에 시작/종료 시각 표시
+  document.getElementById('timerTimeRange').textContent=`⏱ ${fmtHHMM(timerStartTime)} ~ ${fmtHHMM(endTime)}`;
+  setStar(0);
+}
 
-function setStar(n){ starVal=n; document.querySelectorAll('#starRow .star').forEach((s,i)=>s.classList.toggle('on',i<n)); document.getElementById('starLabel').textContent=n?STAR_LABELS[n]:'별점을 선택하세요'; }
+function cancelSave(){
+  document.getElementById('saveForm').style.display='none';
+  document.getElementById('timerDisplay').textContent='00:00:00';
+  document.getElementById('timerStatus').textContent='타이머 중지';
+  timerSeconds=0; timerStartTime=null; setStar(0);
+}
+
+function fmtHHMM(date){
+  if(!date) return '';
+  return String(date.getHours()).padStart(2,'0')+':'+String(date.getMinutes()).padStart(2,'0');
+}
+
+function calcManualMinutes(){
+  const s=document.getElementById('manualStartTime').value;
+  const e=document.getElementById('manualEndTime').value;
+  const el=document.getElementById('manualCalcResult');
+  if(!s||!e){el.textContent='';return;}
+  const [sh,sm]=s.split(':').map(Number);
+  const [eh,em]=e.split(':').map(Number);
+  let mins=(eh*60+em)-(sh*60+sm);
+  if(mins<0) mins+=24*60; // 자정 넘어가는 경우
+  el.textContent=mins>0?`⏱ ${s} ~ ${e} = ${mins}분`:'종료 시각을 시작 시각보다 늦게 입력하세요.';
+}
 function setManualStar(n){ manualStarVal=n; document.querySelectorAll('#manualStarRow .star').forEach((s,i)=>s.classList.toggle('on',i<n)); document.getElementById('manualStarLabel').textContent=n?STAR_LABELS[n]:'별점을 선택하세요'; }
 
 function switchMode(mode){
@@ -517,30 +569,40 @@ function switchMode(mode){
 }
 
 async function saveRecord(mode){
-  let note,minutes,date,star;
+  let note,minutes,date,star,startTime='',endTime='';
   if(mode==='timer'){
-    note=document.getElementById('studyNote').value.trim(); minutes=Math.round(savedSeconds/60); date=today(); star=starVal;
+    note=document.getElementById('studyNote').value.trim();
+    minutes=Math.round(savedSeconds/60);
+    date=today(); star=starVal;
+    startTime=fmtHHMM(timerStartTime);
+    endTime=fmtHHMM(new Date());
     if(!note) return alert('공부 내용을 입력하세요.');
     if(minutes<1) return alert('최소 1분 이상 공부해야 기록됩니다.');
     if(!star) return alert('충실도 별점을 선택하세요.');
   } else {
     note=document.getElementById('manualNote').value.trim();
-    const h=Number(document.getElementById('manualHour').value)||0;
-    const m=Number(document.getElementById('manualMin').value)||0;
-    minutes=h*60+m; date=document.getElementById('manualDate').value; star=manualStarVal;
+    startTime=document.getElementById('manualStartTime').value;
+    endTime=document.getElementById('manualEndTime').value;
+    date=document.getElementById('manualDate').value;
+    star=manualStarVal;
+    if(!startTime||!endTime) return alert('시작 시각과 종료 시각을 입력하세요.');
+    const [sh,sm]=startTime.split(':').map(Number);
+    const [eh,em]=endTime.split(':').map(Number);
+    minutes=(eh*60+em)-(sh*60+sm);
+    if(minutes<0) minutes+=24*60;
     if(!note) return alert('공부 내용을 입력하세요.');
-    if(minutes<1) return alert('공부 시간을 입력하세요 (최소 1분).');
+    if(minutes<1) return alert('공부 시간을 확인하세요 (최소 1분).');
     if(!date) return alert('날짜를 선택하세요.');
     if(!star) return alert('충실도 별점을 선택하세요.');
   }
   try{
-    await gas({action:'saveRecord',id:currentUser.id,name:currentUser.name,fullCls:currentUser.fullCls,grade:currentUser.grade,cls:currentUser.cls,note,minutes,date,star});
+    await gas({action:'saveRecord',id:currentUser.id,name:currentUser.name,fullCls:currentUser.fullCls,grade:currentUser.grade,cls:currentUser.cls,note,minutes,date,star,startTime,endTime});
     if(mode==='timer'){
       const msg=document.getElementById('saveMsg'); msg.style.display='block'; msg.textContent=`✅ ${minutes}분 저장 완료!`;
       setTimeout(()=>{ cancelSave(); loadMyStats(); },1500);
     } else {
       const msg=document.getElementById('manualSaveMsg'); msg.style.display='block'; msg.textContent=`✅ ${minutes}분 저장 완료!`;
-      setTimeout(()=>{ document.getElementById('manualNote').value=''; document.getElementById('manualHour').value=''; document.getElementById('manualMin').value=''; setManualStar(0); msg.style.display='none'; loadMyStats(); },1500);
+      setTimeout(()=>{ document.getElementById('manualNote').value=''; document.getElementById('manualStartTime').value=''; document.getElementById('manualEndTime').value=''; document.getElementById('manualCalcResult').textContent=''; setManualStar(0); msg.style.display='none'; loadMyStats(); },1500);
     }
   }catch(e){ alert('저장 실패: '+e.message); }
 }
@@ -554,7 +616,7 @@ async function loadMyLog(){
     document.getElementById('myLogList').innerHTML=res.logs.map(l=>`
       <div class="log-item">
         <div style="display:flex;justify-content:space-between;align-items:center">
-          <div class="log-subject">${l.minutes}분</div>
+          <div class="log-subject">${l.minutes}분${l.startTime&&l.endTime?' · '+l.startTime+' ~ '+l.endTime:''}</div>
           <div>${'⭐'.repeat(l.star||0)}</div>
         </div>
         <div class="log-note">${l.note}</div>
